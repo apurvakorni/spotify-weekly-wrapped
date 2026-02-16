@@ -40,3 +40,8 @@ SPOTIFY_REDIRECT_URI=http://localhost:3000/callback
 SESSION_SECRET=some_long_random_secret
 PORT=3000
 ```
+### 4) Install & Run
+```
+npm install
+npm start
+```
