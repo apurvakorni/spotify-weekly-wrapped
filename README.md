@@ -43,5 +43,5 @@ PORT=3000
 ### 4) Install & Run
 ```
 npm install
-npm start
+npm run dev
 ```
