@@ -1,4 +1,4 @@
-# Weekly Wrapped🎧
+# Spotify Weekly Wrapped🎧
 
 A Spotify-inspired “Weekly Wrapped” web app that generates personalized listening insights (top artists, top tracks, genres, minutes listened) from your recent listening history.
 
