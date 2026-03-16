@@ -1,0 +1,195 @@
+<!doctype html>
+<html>
+
+<head>
+  <!doctype html>
+  <html>
+
+  <head>
+    <meta charset="utf-8" />
+    <title>Weekly Spotify Wrapped</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+
+<body>
+  <div class="background-gradient"></div>
+
+  <div class="container">
+    <header>
+      <h1>Weekly Wrapped</h1>
+      <div id="user-profile" class="hidden fade-in">
+        <img id="avatar" class="avatar" alt="Profile" />
+        <span id="user-name"></span>
+        <button id="logout" class="btn-ghost">Log out</button>
+      </div>
+    </header>
+
+    <main>
+      <!-- Login Section -->
+      <section id="login-section" class="center-content fade-in">
+        <h2>Discover your weekly vibe.</h2>
+        <p class="subtext">Connect with Spotify to see your top tracks, artists, and listening stats for the week.</p>
+        <button id="login" class="btn-primary">Connect with Spotify</button>
+      </section>
+
+      <!-- Content Section -->
+      <section id="content" class="hidden">
+
+        <!-- Hero Stats -->
+        <div class="hero-grid fade-in-up">
+          <div class="glass-card hero-stat">
+            <div class="label">Time Listened</div>
+            <div class="value" id="total-minutes">--</div>
+            <div class="unit">Minutes</div>
+          </div>
+          <div class="glass-card hero-stat">
+            <div class="label">Top Genre</div>
+            <div class="value" id="top-genre">--</div>
+            <div class="unit">Vibe</div>
+          </div>
+        </div>
+
+        <div class="lists-grid">
+          <!-- Top Artists -->
+          <div class="glass-card list-card fade-in-up delay-1">
+            <h3>Top Artists</h3>
+            <div id="top-artists" class="list-container"></div>
+          </div>
+
+          <!-- Top Tracks -->
+          <div class="glass-card list-card fade-in-up delay-2">
+            <h3>Top Tracks</h3>
+            <div id="top-tracks" class="list-container"></div>
+          </div>
+        </div>
+
+        <!-- Detailed Stats -->
+        <div class="glass-card full-width fade-in-up delay-3">
+          <h3>Listening Breakdown</h3>
+          <div class="split-details">
+            <div>
+              <h4>By Artist</h4>
+              <ol id="artist-mins" class="detail-list"></ol>
+            </div>
+            <div>
+              <h4>By Track</h4>
+              <ol id="track-mins" class="detail-list"></ol>
+            </div>
+          </div>
+          <p class="note">Note: Spotify’s API limits recently played history; totals may cover only a few days.</p>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const loginBtn = document.getElementById("login");
+    const logoutBtn = document.getElementById("logout");
+    const loginSection = document.getElementById("login-section");
+    const contentSection = document.getElementById("content");
+    const userProfile = document.getElementById("user-profile");
+    const userNameEl = document.getElementById("user-name");
+    const avatarEl = document.getElementById("avatar");
+
+    function showContent() {
+      loginSection.classList.add("hidden");
+      contentSection.classList.remove("hidden");
+      userProfile.classList.remove("hidden");
+    }
+
+    function showLogin() {
+      loginSection.classList.remove("hidden");
+      contentSection.classList.add("hidden");
+      userProfile.classList.add("hidden");
+    }
+
+    async function fetchWrapped() {
+      try {
+        const res = await fetch("/api/wrapped");
+        if (res.status === 401) {
+          showLogin();
+          return;
+        }
+        const data = await res.json();
+
+        // User Info
+        userNameEl.textContent = data.user.name;
+        if (data.user.image) {
+          avatarEl.src = data.user.image;
+        }
+
+        // Stats
+        document.getElementById("total-minutes").textContent = data.listening.totalMinutes;
+        document.getElementById("top-genre").textContent = data.topGenre;
+
+        // Top Artists
+        const ta = document.getElementById("top-artists");
+        ta.innerHTML = "";
+        data.topArtists.forEach(a => {
+          const item = document.createElement("a");
+          item.href = a.url;
+          item.target = "_blank";
+          item.className = "list-item";
+          item.innerHTML = `
+            ${a.image ? `<img src="${a.image}" alt="${a.name}"/>` : ""}
+            <div class="info">
+              <div class="name">${a.name}</div>
+              <div class="meta">${(a.genres || []).slice(0, 2).join(", ")}</div>
+            </div>`;
+          ta.appendChild(item);
+        });
+
+        // Top Tracks
+        const tt = document.getElementById("top-tracks");
+        tt.innerHTML = "";
+        data.topTracks.forEach(t => {
+          const item = document.createElement("a");
+          item.href = t.url;
+          item.target = "_blank";
+          item.className = "list-item";
+          item.innerHTML = `
+            ${t.image ? `<img src="${t.image}" alt="${t.name}"/>` : ""}
+            <div class="info">
+              <div class="name">${t.name}</div>
+              <div class="meta">${t.artists.join(", ")}</div>
+            </div>`;
+          tt.appendChild(item);
+        });
+
+        // Details
+        const am = document.getElementById("artist-mins");
+        am.innerHTML = "";
+        data.listening.perArtist.slice(0, 10).forEach(a => {
+          const li = document.createElement("li");
+          li.innerHTML = `<span>${a.name}</span> <span class="count">${a.minutes}m</span>`;
+          am.appendChild(li);
+        });
+
+        const tm = document.getElementById("track-mins");
+        tm.innerHTML = "";
+        data.listening.perTrack.slice(0, 10).forEach(t => {
+          const li = document.createElement("li");
+          li.innerHTML = `<span>${t.name}</span> <span class="count">${t.minutes}m</span>`;
+          tm.appendChild(li);
+        });
+
+        showContent();
+      } catch (e) {
+        console.error(e);
+        showLogin();
+      }
+    }
+
+    loginBtn.onclick = () => (window.location.href = "/login?force=true");
+    logoutBtn.onclick = async () => {
+      await fetch("/logout", { method: "POST" });
+      window.location.reload();
+    };
+
+    fetchWrapped();
+  </script>
+</body>
+
+</html>
